@@ -18,6 +18,7 @@ public class Board {
                 if (tiles[i][j] == 0) {
                     freeSpace[0] = i;
                     freeSpace[1] = j;
+                    //System.out.printf("Freespace = %d - %d\n", i, j);
                 }
                 arrBoard[i][j] = tiles[i][j];
             }
@@ -114,7 +115,7 @@ public class Board {
     // all neighboring boards
 
     public Iterable<Board> neighbors() {
-        ArrayList<Board> nbors = new ArrayList<Board>();
+        ArrayList<Board> nbors = new ArrayList<>();
 
         int i = freeSpace[0];
         int j = freeSpace[1];
@@ -164,16 +165,19 @@ public class Board {
 
     // unit testing (not graded)
     public static void main(String[] args) {
-        int[][] arr = { { 0, 2, 3 }, { 4, 1, 6 }, { 7, 8, 5 } };
-
-        int[][] arr2 = { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 0, 8 } };
+        int[][] arr = {
+                {1, 2, 3},
+                {0, 4, 6},
+                {7, 5, 8}
+        };
 
         Board test = new Board(arr);
-        Board test2 = new Board(arr2);
+        //Board test2 = new Board(arr2);
 
-        System.out.println(test.toString());
-        System.out.println(test.twin().toString());
-        System.out.println(test.equals(test2));
+        System.out.printf("Parent \n %s", test.toString());
+        for(Board board: test.neighbors()){
+            System.out.println(board.toString());
+        }
 
     }
 
