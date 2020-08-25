@@ -1,11 +1,13 @@
 import java.util.ArrayList;
 import java.util.Arrays;
+
 import edu.princeton.cs.algs4.StdRandom;
 
 public class Board {
 
-    private int[][] arrBoard;
-    private int[] freeSpace;
+    private final int[][] arrBoard;
+    private final int[] freeSpace;
+    private int[] twinTiles;
 
     // create a board from an n-by-n array of tiles,
     // where tiles[row][col] = tile at (row, col)
@@ -108,8 +110,11 @@ public class Board {
 
     // does this board equal y?
     public boolean equals(Object y) {
-        Board that = (Board) y;
-        return Arrays.deepEquals(this.arrBoard, that.arrBoard);
+        if (y instanceof Board) {
+            Board that = (Board) y;
+            return Arrays.deepEquals(this.arrBoard, that.arrBoard);
+        }
+        return false;
     }
 
     // all neighboring boards
@@ -136,27 +141,41 @@ public class Board {
     }
 
     private Board swap(int originR, int originC, int destR, int destC) {
-        Board that = new Board(this.arrBoard);
+        int[][] thatArr = new int[this.arrBoard.length][this.arrBoard.length];
 
-        int temp = that.arrBoard[originR][originC];
-        that.arrBoard[originR][originC] = that.arrBoard[destR][destC];
-        that.arrBoard[destR][destC] = temp;
+        for (int i = 0; i < arrBoard.length; i++) {
+            for (int j = 0; j < arrBoard.length; j++) {
+                thatArr[i][j] = arrBoard[i][j];
+            }
+        }
 
-        return that;
+        int temp = thatArr[originR][originC];
+        thatArr[originR][originC] = thatArr[destR][destC];
+        thatArr[destR][destC] = temp;
+
+        return new Board(thatArr);
     }
 
     // a board that is obtained by exchanging any pair of tiles
     public Board twin() {
-        int iO = StdRandom.uniform(0, arrBoard.length);
-        int jO = StdRandom.uniform(0, arrBoard.length);
-        int iD = -1, jD = -1;
+        if (twinTiles == null) {
+            twinTiles = new int[4];
+            int iD = -1, jD = -1, iO = -1, jO = -1;
 
-        do{
-            iD = StdRandom.uniform(0, arrBoard.length);
-            jD = StdRandom.uniform(0, arrBoard.length);
-        }while(iO == iD && jO == jD);
+            do {
+                iO = StdRandom.uniform(0, arrBoard.length);
+                jO = StdRandom.uniform(0, arrBoard.length);
+                iD = StdRandom.uniform(0, arrBoard.length);
+                jD = StdRandom.uniform(0, arrBoard.length);
+            } while (iO == iD && jO == jD || (arrBoard[iO][jO] == 0 || arrBoard[iD][jD] == 0));
 
-        return swap(iO, jO, iD, jD);
+            twinTiles[0] = iD;
+            twinTiles[1] = jD;
+            twinTiles[2] = iO;
+            twinTiles[3] = iO;
+        }
+
+        return swap(twinTiles[0], twinTiles[1], twinTiles[2], twinTiles[3]);
     }
 
     private boolean chkIndex(int i, int j) {
@@ -166,18 +185,37 @@ public class Board {
     // unit testing (not graded)
     public static void main(String[] args) {
         int[][] arr = {
-                {1, 2, 3},
-                {0, 4, 6},
-                {7, 5, 8}
+                {7, 5, 3},
+                {2, 6, 0},
+                {1, 4, 8}
         };
 
-        Board test = new Board(arr);
-        //Board test2 = new Board(arr2);
+        int[][] arr2 = {
+                {6, 5, 3},
+                {2, 7, 0},
+                {1, 4, 8}
+        };
 
-        System.out.printf("Parent \n %s", test.toString());
-        for(Board board: test.neighbors()){
-            System.out.println(board.toString());
-        }
+        int[][] tbtArr = {
+                {2, 3},
+                {1, 0}
+        };
+
+        Board board = new Board(arr);
+        Board other = new Board(arr2);
+
+        System.out.println(board.toString());
+        board.hamming();
+        board.neighbors();
+        board.equals(other);
+        board.equals(other);
+        System.out.println(board.twin().toString());
+        board.isGoal();
+        System.out.println(board.twin().toString());
+        System.out.println(board.toString());
+        System.out.println(board.twin().toString());
+
+        System.out.println(board.toString());
 
     }
 

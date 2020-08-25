@@ -1,64 +1,90 @@
 import java.util.Comparator;
+
 import edu.princeton.cs.algs4.Stack;
 import edu.princeton.cs.algs4.MinPQ;
+import edu.princeton.cs.algs4.In;
+import edu.princeton.cs.algs4.StdOut;
 
 public class Solver {
 
-    private final Board initial;
     private final node goal;
+
 
     private static class node {
         public final Board board;
         public final int moves;
         public final node prevBoard;
+        public final int priority;
 
         public node(Board board, int moves, node prevBoard) {
             this.board = board;
             this.moves = moves;
             this.prevBoard = prevBoard;
+            this.priority = moves + board.manhattan();
         }
     }
 
     // find a solution to the initial board (using the A* algorithm)
     public Solver(Board initial) {
+        if (initial == null) throw new IllegalArgumentException();
         priorityOrder order = new priorityOrder();
-        this.initial = initial;
 
-        node current = new node(initial, 0, null);
         MinPQ<node> pQ = new MinPQ<>(order);
-        pQ.insert(current);
+        MinPQ<node> twinPQ = new MinPQ<>(order);
+        pQ.insert(new node(initial, 0, null));
+        Board twinBoard = initial.twin();
+        twinPQ.insert(new node(twinBoard, 0, null));
 
-        while (!pQ.min().board.isGoal()) {
-            node prev = pQ.delMin();
-            int moves = prev.moves;
-            moves++;
+        while (!pQ.min().board.isGoal() && !twinPQ.min().board.isGoal()) {
 
-            for(Board board: prev.board.neighbors()){
-                node nborNode = new node(board, moves, prev);
-                pQ.insert(nborNode);
+            node prev = pQ.delMin(); //Actual
+            for (Board board : prev.board.neighbors()) {
+                if (prev.prevBoard == null) {
+                    node nborNode = new node(board, prev.moves + 1, prev);
+                    pQ.insert(nborNode);
+                } else if (!board.equals(prev.prevBoard.board)) {
+                    node nborNode = new node(board, prev.moves + 1, prev);
+                    pQ.insert(nborNode);
+                }
             }
-            //System.out.printf("Move: %d \n", moves);
+
+            node twinPrev = twinPQ.delMin(); //Twin
+            for (Board twinNbor : twinPrev.board.neighbors()) {
+                if (twinPrev.prevBoard == null) {
+                    node nborNode = new node(twinNbor, twinPrev.moves + 1, twinPrev);
+                    twinPQ.insert(nborNode);
+                } else if (!twinNbor.equals(twinPrev.prevBoard.board)) {
+                    node nborNode = new node(twinNbor, twinPrev.moves + 1, twinPrev);
+                    twinPQ.insert(nborNode);
+                }
+            }
         }
 
-        goal = pQ.delMin();
-        System.out.printf("Solved in %d moves.\n", goal.moves);
+        if (pQ.min().board.isGoal()) {
+            goal = pQ.delMin();
+        } else goal = null;
     }
 
     // is the initial board solvable? (see below)
     public boolean isSolvable() {
-        return true;
+        if (goal == null) return false;
+        if (goal.board.isGoal()) return true;
+        return false;
     }
 
     // min number of moves to solve initial board; -1 if unsolvable
     public int moves() {
-        return initial.manhattan();
+        if (!isSolvable()) return -1;
+        return goal.moves;
     }
 
     // sequence of boards in a shortest solution; null if unsolvable
     public Iterable<Board> solution() {
+        if (!isSolvable()) return null;
+
         Stack<Board> sols = new Stack<>();
 
-        for(node curr = goal; curr != null; curr = curr.prevBoard){
+        for (node curr = goal; curr != null; curr = curr.prevBoard) {
             sols.push(curr.board);
         }
 
@@ -67,29 +93,34 @@ public class Solver {
 
     private static class priorityOrder implements Comparator<node> {
         public int compare(node a, node b) {
-            int pA = a.board.manhattan() + a.moves;
-            int pB = b.board.manhattan() + b.moves;
 
-            if (pA > pB) return 1;
-            else if (pB > pA) return -1;
+            if (a.priority > b.priority) return 1;
+            else if (b.priority > a.priority) return -1;
             else return 0;
+
         }
     }
 
     // test client (see below)
     public static void main(String[] args) {
-        int[][] test = {
-            {6, 1, 3},
-            {4, 2, 5},
-            {7, 0, 8}
-        };
+        In in = new In(args[0]);
+        int N = in.readInt();
+        int[][] blocks = new int[N][N];
+        for (int i = 0; i < N; i++)
+            for (int j = 0; j < N; j++)
+                blocks[i][j] = in.readInt();
+        Board initial = new Board(blocks);
 
-        Board testCase = new Board(test);
-        Solver testSolve = new Solver(testCase);
+        // solve the puzzle
+        Solver solver = new Solver(initial);
 
-        for(Board steps: testSolve.solution()){
-            System.out.println(steps.toString());
+        // print solution to standard output
+        if (!solver.isSolvable())
+            StdOut.println("No solution possible");
+        else {
+            StdOut.println("Minimum number of moves = " + solver.moves());
+            for (Board board : solver.solution())
+                StdOut.println(board);
         }
     }
-
 }
